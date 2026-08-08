@@ -1,0 +1,11 @@
+{
+  "name": "MMM-GreenMonster",
+  "version": "1.0.0",
+  "description": "A Fenway Park Green Monster-style scoreboard module for MagicMirror2, powered by the MLB Stats API.",
+  "main": "MMM-GreenMonster.js",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "keywords": ["magicmirror", "mlb", "baseball", "scoreboard"],
+  "license": "MIT"
+}
