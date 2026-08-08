@@ -1,6 +1,8 @@
 /* MMM-GreenMonster / MMM-GreenMonster.css
- * Fenway Green Monster scoreboard, rendered like it wants to be a
- * hidden stadium level in a late-90s baseball cartridge game.
+ * Fenway Green Monster scoreboard: dark olive-grey painted panels with
+ * white grid lines, set into the bright green wall, rendered like it
+ * wants to be a hidden stadium level in a late-90s baseball cartridge
+ * game. Static layout — nothing scrolls, only changed digits animate.
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
@@ -9,12 +11,14 @@
   --gm-green-deep: #063a26;
   --gm-green: #0b5c39;
   --gm-green-light: #147347;
-  --gm-black: #0a0a0a;
-  --gm-panel: #101010;
+  --gm-board: #4c4f45;
+  --gm-board-line: rgba(255, 255, 255, 0.22);
+  --gm-slot: #131311;
   --gm-white: #f4efe1;
   --gm-yellow: #ffd400;
+  --gm-teal: #2ec4b6;
   --gm-red: #e2432f;
-  --gm-dim: #3a3a3a;
+  --gm-dim: #8a8c81;
   font-family: "VT323", "Press Start 2P", monospace;
 }
 
@@ -104,9 +108,10 @@
 .gm-layout-row {
   flex-direction: row;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
-.gm-loading {
+.gm-message {
   font-family: "Press Start 2P", monospace;
   font-size: 11px;
   color: var(--gm-yellow);
@@ -114,56 +119,64 @@
   text-align: center;
 }
 
-/* ---------- ticker / scoreboard ---------- */
+/* ---------- shared panel chrome ---------- */
 
-.gm-scoreboard {
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.25);
+.gm-panel {
+  background: var(--gm-board);
+  border: 2px solid rgba(0, 0, 0, 0.35);
   border-radius: 4px;
-  padding: 6px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  padding: 7px 9px 9px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-.gm-ticker-track {
+.gm-panel-title {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--gm-white);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--gm-board-line);
+}
+
+/* ---------- Fenway Park linescore ---------- */
+
+.gm-linescore {
   display: flex;
-  gap: 10px;
-  width: max-content;
-  animation: gm-scroll var(--gm-scroll-duration, 40s) linear infinite;
+  flex-direction: column;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-.gm-game-tile {
-  position: relative;
-  flex: 0 0 auto;
-  background: var(--gm-panel);
-  border: 2px solid rgba(244, 239, 225, 0.15);
-  border-radius: 3px;
-  padding: 6px 8px 8px;
-  min-width: 220px;
-}
-
-.gm-game-tile.is-live {
-  border-color: var(--gm-yellow);
-  box-shadow: 0 0 8px rgba(255, 212, 0, 0.35);
-}
-
-.gm-game-tile.is-final {
-  opacity: 0.85;
-}
-
-.gm-row {
+.gm-linescore-row {
   display: flex;
   align-items: center;
   gap: 3px;
   font-family: "VT323", monospace;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
+}
+
+.gm-linescore-row.gm-linescore-head {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  color: var(--gm-dim);
+}
+
+.gm-head-cell {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+  color: inherit;
+  font-family: inherit;
 }
 
 .gm-abbr {
   font-family: "Press Start 2P", monospace;
   font-size: 9px;
-  width: 34px;
-  flex: 0 0 34px;
+  width: 30px;
+  flex: 0 0 30px;
   color: var(--gm-white);
 }
 
@@ -175,27 +188,27 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 20px;
-  flex: 0 0 16px;
-  background: var(--gm-black);
+  width: 18px;
+  height: 22px;
+  flex: 0 0 18px;
+  background: var(--gm-slot);
   color: var(--gm-white);
   border-radius: 2px;
-  box-shadow: inset 0 0 0 1px rgba(244, 239, 225, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .gm-digit.empty {
-  color: var(--gm-dim);
+  color: #333229;
 }
 
 .gm-digit.live {
   color: var(--gm-yellow);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 0, 0.5), 0 0 4px rgba(255, 212, 0, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 0, 0.55), 0 0 4px rgba(255, 212, 0, 0.4);
 }
 
 .gm-digit.gm-rhe {
-  margin-left: 3px;
-  border-left: 2px solid rgba(244, 239, 225, 0.2);
+  margin-left: 5px;
   font-weight: bold;
 }
 
@@ -203,71 +216,107 @@
   animation: gm-flip 0.5s ease-out;
 }
 
-.gm-status {
-  margin-top: 4px;
-  font-family: "Press Start 2P", monospace;
-  font-size: 8px;
-  color: var(--gm-dim);
-  text-align: right;
-}
+/* ---------- light strip ---------- */
 
-/* ---------- balls / strikes / outs lights ---------- */
-
-.gm-lights {
+.gm-light-strip {
   display: flex;
-  gap: 10px;
-  margin-top: 5px;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  row-gap: 6px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--gm-board-line);
 }
 
-.gm-light-group {
+.gm-ls-item {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
 }
 
-.gm-light-label {
+.gm-ls-text {
   font-family: "Press Start 2P", monospace;
   font-size: 7px;
-  color: var(--gm-dim);
-  margin-right: 2px;
+  color: rgba(244, 239, 225, 0.85);
 }
 
 .gm-light {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: rgba(244, 239, 225, 0.08);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 
 .gm-light.on {
-  background: var(--gm-red);
-  box-shadow: 0 0 5px rgba(226, 67, 47, 0.9);
-  animation: gm-blink 1.4s steps(1) infinite;
+  background: var(--gm-teal);
+  box-shadow: 0 0 5px rgba(46, 196, 182, 0.9);
 }
 
-.gm-light-group:last-child .gm-light.on {
-  background: var(--gm-yellow);
-  box-shadow: 0 0 5px rgba(255, 212, 0, 0.9);
+.gm-light.on.strike {
+  background: var(--gm-red);
+  box-shadow: 0 0 5px rgba(226, 67, 47, 0.9);
+}
+
+.gm-light.on.flash {
+  animation: gm-light-pulse 1.4s ease-out;
+}
+
+/* ---------- American League out-of-town board ---------- */
+
+.gm-al-panel {
+  overflow-x: auto;
+}
+
+.gm-al-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "VT323", monospace;
+  font-size: 16px;
+  padding: 2px 2px;
+}
+
+.gm-al-row.gm-al-head {
+  border-bottom: 1px solid var(--gm-board-line);
+  padding-bottom: 5px;
+  margin-bottom: 4px;
+}
+
+.gm-al-row.gm-al-head .gm-al-abbr,
+.gm-al-row.gm-al-head .gm-digit {
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  color: var(--gm-dim);
+}
+
+.gm-al-abbr {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  width: 38px;
+  flex: 0 0 38px;
+  color: var(--gm-white);
+}
+
+.gm-inn-cell {
+  width: 34px;
+  flex: 0 0 34px;
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.gm-al-row.is-favorite {
+  color: var(--gm-yellow);
+  background: rgba(255, 212, 0, 0.08);
+  border-radius: 2px;
+}
+
+.gm-al-row.is-favorite .gm-al-abbr {
+  color: var(--gm-yellow);
 }
 
 /* ---------- standings ---------- */
-
-.gm-standings {
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 4px;
-  padding: 6px 8px 8px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
-}
-
-.gm-standings-title {
-  font-family: "Press Start 2P", monospace;
-  font-size: 9px;
-  color: var(--gm-yellow);
-  margin-bottom: 5px;
-  letter-spacing: 0.5px;
-}
 
 .gm-standings-table {
   display: flex;
@@ -276,21 +325,42 @@
 }
 
 .gm-standings-row {
-  display: grid;
-  grid-template-columns: 2.4fr 1fr 1fr 1.3fr 1fr;
+  display: flex;
+  align-items: center;
   font-family: "VT323", monospace;
   font-size: 16px;
   color: var(--gm-white);
-  padding: 1px 4px;
+  padding: 2px 4px;
 }
 
 .gm-standings-row.gm-standings-head {
   font-family: "Press Start 2P", monospace;
   font-size: 7px;
   color: var(--gm-dim);
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(244, 239, 225, 0.2);
-  margin-bottom: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--gm-board-line);
+  margin-bottom: 3px;
+}
+
+.gm-col-team {
+  width: 56px;
+  flex: 0 0 56px;
+}
+
+.gm-col-w,
+.gm-col-l {
+  width: 30px;
+  flex: 0 0 30px;
+}
+
+.gm-col-pct {
+  width: 48px;
+  flex: 0 0 48px;
+}
+
+.gm-col-gb {
+  width: 34px;
+  flex: 0 0 34px;
 }
 
 .gm-standings-row.is-favorite {
@@ -313,20 +383,11 @@
     0 0 0 1px rgba(0, 0, 0, 0.5),
     -2px -2px 0 -1px var(--gm-red) inset,
     2px 2px 0 -1px var(--gm-red) inset;
-  animation: gm-mascot-bounce 45s linear infinite;
+  animation: gm-mascot-bounce 60s linear infinite;
   z-index: 6;
 }
 
 /* ---------- keyframes ---------- */
-
-@keyframes gm-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
 
 @keyframes gm-flip {
   0% {
@@ -340,6 +401,21 @@
   100% {
     transform: rotateX(0deg);
     filter: brightness(1);
+  }
+}
+
+@keyframes gm-light-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

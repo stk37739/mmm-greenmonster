@@ -6,8 +6,10 @@
  * Endpoints used:
  *   GET /api/v1/teams?sportId=1
  *       -> cached once per boot: team id -> {abbreviation, name, leagueId}
- *   GET /api/v1/schedule?sportId=1&date=YYYY-MM-DD&hydrate=linescore,team
- *       -> today's games incl. inning-by-inning linescore, balls/strikes/outs
+ *   GET /api/v1/schedule?sportId=1&date=YYYY-MM-DD&hydrate=linescore,team,probablePitcher
+ *       -> today's games incl. inning-by-inning linescore, B/S/O, probable pitchers
+ *   GET /api/v1/people?personIds=ID1,ID2,...
+ *       -> batch lookup of jersey numbers for probable pitchers (cached by id)
  *   GET /api/v1/standings?leagueId=103&season=YYYY&standingsTypes=regularSeason
  *       -> AL standings, filtered down to the AL East division
  */
@@ -34,6 +36,7 @@ module.exports = NodeHelper.create({
   start() {
     this.config = null;
     this.teamsCache = null;
+    this.pitcherNumberCache = {}; // personId -> jersey number string
     this.gamesTimer = null;
     this.standingsTimer = null;
     console.log("[MMM-GreenMonster] node_helper started");
@@ -94,19 +97,44 @@ module.exports = NodeHelper.create({
     }).format(new Date());
   },
 
+  formatStartTime(isoString) {
+    const tz = (this.config && this.config.timezone) || "America/New_York";
+    try {
+      return new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        hour: "numeric",
+        minute: "2-digit"
+      }).format(new Date(isoString));
+    } catch (e) {
+      return "-";
+    }
+  },
+
   async updateGames() {
     if (!this.teamsCache) await this.loadTeams();
 
     const date = this.todayISO();
-    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team`;
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=linescore,team,probablePitcher`;
 
     try {
       const data = await this.fetchJSON(url);
       const rawGames = (data.dates && data.dates[0] && data.dates[0].games) || [];
 
-      const games = rawGames
+      let games = rawGames
         .map((g) => this.normalizeGame(g))
         .filter((g) => g.awayIsAL || g.homeIsAL); // AL team involved, same rule the real wall uses
+
+      await this.ensurePitcherNumbers(games);
+
+      games = games.map((g) => ({
+        ...g,
+        awayPitcherNumber: g.awayProbablePitcherId
+          ? this.pitcherNumberCache[g.awayProbablePitcherId] || null
+          : null,
+        homePitcherNumber: g.homeProbablePitcherId
+          ? this.pitcherNumberCache[g.homeProbablePitcherId] || null
+          : null
+      }));
 
       this.sendSocketNotification("GM_GAMES", { games, date });
     } catch (e) {
@@ -121,6 +149,8 @@ module.exports = NodeHelper.create({
     const homeInfo = this.teamsCache[homeTeam.id] || {};
     const ls = g.linescore || {};
     const lsTeams = ls.teams || {};
+    const awayProbable = g.teams.away.probablePitcher;
+    const homeProbable = g.teams.home.probablePitcher;
 
     const innings = (ls.innings || []).map((inn) => ({
       num: inn.num,
@@ -132,6 +162,7 @@ module.exports = NodeHelper.create({
       gamePk: g.gamePk,
       status: g.status.abstractGameState, // "Preview" | "Live" | "Final"
       detailedState: g.status.detailedState,
+      startTime: this.formatStartTime(g.gameDate),
       awayAbbr: awayInfo.abbreviation || awayTeam.abbreviation || "???",
       homeAbbr: homeInfo.abbreviation || homeTeam.abbreviation || "???",
       awayIsAL: awayInfo.leagueId === AL_LEAGUE_ID,
@@ -147,8 +178,38 @@ module.exports = NodeHelper.create({
       awayErrors: lsTeams.away ? lsTeams.away.errors : null,
       homeRuns: lsTeams.home ? lsTeams.home.runs : null,
       homeHits: lsTeams.home ? lsTeams.home.hits : null,
-      homeErrors: lsTeams.home ? lsTeams.home.errors : null
+      homeErrors: lsTeams.home ? lsTeams.home.errors : null,
+      awayProbablePitcherId: awayProbable ? awayProbable.id : null,
+      awayProbablePitcherName: awayProbable ? awayProbable.fullName : null,
+      homeProbablePitcherId: homeProbable ? homeProbable.id : null,
+      homeProbablePitcherName: homeProbable ? homeProbable.fullName : null
     };
+  },
+
+  // Jersey numbers aren't in the schedule payload, so batch-fetch any we
+  // haven't seen yet and cache them (numbers don't change mid-season).
+  async ensurePitcherNumbers(games) {
+    const missing = new Set();
+    games.forEach((g) => {
+      if (g.awayProbablePitcherId && !(g.awayProbablePitcherId in this.pitcherNumberCache)) {
+        missing.add(g.awayProbablePitcherId);
+      }
+      if (g.homeProbablePitcherId && !(g.homeProbablePitcherId in this.pitcherNumberCache)) {
+        missing.add(g.homeProbablePitcherId);
+      }
+    });
+
+    if (missing.size === 0) return;
+
+    try {
+      const ids = [...missing].join(",");
+      const data = await this.fetchJSON(`https://statsapi.mlb.com/api/v1/people?personIds=${ids}`);
+      (data.people || []).forEach((p) => {
+        this.pitcherNumberCache[p.id] = p.primaryNumber || null;
+      });
+    } catch (e) {
+      console.error("[MMM-GreenMonster] Failed to load pitcher numbers:", e.message);
+    }
   },
 
   async updateStandings() {
