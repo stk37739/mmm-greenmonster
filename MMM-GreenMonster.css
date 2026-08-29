@@ -1,25 +1,25 @@
 /* MMM-GreenMonster / MMM-GreenMonster.css
- * Fenway Green Monster scoreboard: dark olive-grey painted panels with
- * white grid lines, set into the bright green wall, rendered like it
- * wants to be a hidden stadium level in a late-90s baseball cartridge
- * game. Static layout — nothing scrolls, only changed digits animate.
+ * Styled to read like a photograph of Fenway's Green Monster: painted
+ * sheet-metal green with seams and grain, recessed number windows,
+ * bold painted stadium lettering. No arcade/CRT flourishes.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Bebas+Neue&display=swap");
 
 .MMM-GreenMonster {
-  --gm-green-deep: #063a26;
-  --gm-green: #0b5c39;
-  --gm-green-light: #147347;
-  --gm-board: #4c4f45;
-  --gm-board-line: rgba(255, 255, 255, 0.22);
-  --gm-slot: #131311;
-  --gm-white: #f4efe1;
-  --gm-yellow: #ffd400;
-  --gm-teal: #2ec4b6;
-  --gm-red: #e2432f;
-  --gm-dim: #8a8c81;
-  font-family: "VT323", "Press Start 2P", monospace;
+  --gm-green-light: #3c7154;
+  --gm-green: #2b5940;
+  --gm-green-deep: #163a28;
+  --gm-board: #52564b;
+  --gm-board-light: #5d6154;
+  --gm-board-line: rgba(255, 255, 255, 0.16);
+  --gm-slot: #16160f;
+  --gm-white: #f2ede0;
+  --gm-yellow: #f5c518;
+  --gm-teal: #35b8a6;
+  --gm-red: #c53a28;
+  --gm-dim: #a3a595;
+  font-family: "Oswald", "Arial Narrow", sans-serif;
 }
 
 .gm-wrapper {
@@ -27,37 +27,21 @@
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
-  border-radius: 6px;
-  padding: 10px 12px 12px;
+  border-radius: 4px;
+  padding: 12px 14px 14px;
   color: var(--gm-white);
   background:
+    radial-gradient(ellipse at 15% -20%, rgba(255, 255, 255, 0.12), transparent 55%),
     repeating-linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.02) 0px,
-      rgba(255, 255, 255, 0.02) 2px,
+      90deg,
+      rgba(0, 0, 0, 0.07) 0px,
+      rgba(0, 0, 0, 0.07) 2px,
       transparent 2px,
-      transparent 4px
+      transparent 150px
     ),
-    radial-gradient(circle at 6px 6px, rgba(0, 0, 0, 0.35) 1.5px, transparent 1.6px) 0 0/26px 26px,
-    linear-gradient(180deg, var(--gm-green-light) 0%, var(--gm-green) 45%, var(--gm-green-deep) 100%);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4), inset 0 2px 10px rgba(0, 0, 0, 0.5);
-  animation: gm-crt-pulse 6s ease-in-out infinite;
-}
-
-.gm-scanlines {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.15) 0px,
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  mix-blend-mode: multiply;
-  animation: gm-scanline-drift 7s linear infinite;
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>"),
+    linear-gradient(175deg, var(--gm-green-light) 0%, var(--gm-green) 45%, var(--gm-green-deep) 100%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), inset 0 3px 14px rgba(0, 0, 0, 0.45);
 }
 
 /* ---------- header ---------- */
@@ -66,80 +50,115 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 2px solid rgba(244, 239, 225, 0.25);
+  margin-bottom: 9px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid rgba(242, 237, 224, 0.22);
 }
 
 .gm-title {
-  font-family: "Press Start 2P", monospace;
-  font-size: 12px;
-  letter-spacing: 1px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
   color: var(--gm-white);
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+  text-shadow: 1px 2px 1px rgba(0, 0, 0, 0.5);
 }
 
 .gm-title-sub {
   color: var(--gm-yellow);
+  font-weight: 600;
 }
 
 .gm-live-dot {
-  font-family: "Press Start 2P", monospace;
-  font-size: 10px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 1px;
   color: transparent;
 }
 
 .gm-live-dot.on {
   color: var(--gm-red);
-  animation: gm-blink 1.2s steps(1) infinite;
+  animation: gm-blink 1.3s steps(1) infinite;
 }
 
-/* ---------- layout ---------- */
+/* ---------- panel chrome ---------- */
 
 .gm-body {
   display: flex;
-  gap: 10px;
-}
-
-.gm-layout-column {
-  flex-direction: column;
-}
-
-.gm-layout-row {
-  flex-direction: row;
-  align-items: flex-start;
-  flex-wrap: wrap;
 }
 
 .gm-message {
-  font-family: "Press Start 2P", monospace;
-  font-size: 11px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 1px;
   color: var(--gm-yellow);
-  padding: 14px 4px;
+  padding: 12px 4px;
   text-align: center;
 }
 
-/* ---------- shared panel chrome ---------- */
-
 .gm-panel {
-  background: var(--gm-board);
-  border: 2px solid rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
-  padding: 7px 9px 9px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 1px 4px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.06), transparent 45%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>"),
+    var(--gm-board);
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  padding: 9px 11px 11px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-.gm-panel-title {
-  font-family: "Press Start 2P", monospace;
-  font-size: 10px;
-  letter-spacing: 1px;
+.gm-section-title {
+  font-family: "Oswald", sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   color: var(--gm-white);
   margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--gm-board-line);
 }
 
-/* ---------- Fenway Park linescore ---------- */
+.gm-panel-row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: 16px;
+}
+
+.gm-col-linescore {
+  flex: 1.3 1 0;
+  min-width: 0;
+}
+
+.gm-col-standings {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.gm-vdivider {
+  width: 1px;
+  flex: 0 0 1px;
+  align-self: stretch;
+  background: var(--gm-board-line);
+}
+
+@media (max-width: 640px) {
+  .gm-panel-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .gm-vdivider {
+    width: 100%;
+    height: 1px;
+    flex: 0 0 1px;
+  }
+}
+
+/* ---------- linescore ---------- */
 
 .gm-linescore {
   display: flex;
@@ -147,20 +166,23 @@
   gap: 4px;
   overflow-x: auto;
   overflow-y: hidden;
+  margin-bottom: 2px;
 }
 
 .gm-linescore-row {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-family: "VT323", monospace;
-  font-size: 16px;
+  font-family: "Bebas Neue", "Oswald", sans-serif;
+  font-size: 17px;
   line-height: 1;
 }
 
 .gm-linescore-row.gm-linescore-head {
-  font-family: "Press Start 2P", monospace;
-  font-size: 7px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.5px;
   color: var(--gm-dim);
 }
 
@@ -173,10 +195,12 @@
 }
 
 .gm-abbr {
-  font-family: "Press Start 2P", monospace;
-  font-size: 9px;
-  width: 30px;
-  flex: 0 0 30px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  width: 32px;
+  flex: 0 0 32px;
   color: var(--gm-white);
 }
 
@@ -194,22 +218,22 @@
   background: var(--gm-slot);
   color: var(--gm-white);
   border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .gm-digit.empty {
-  color: #333229;
+  color: #38392f;
 }
 
 .gm-digit.live {
   color: var(--gm-yellow);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 0, 0.55), 0 0 4px rgba(255, 212, 0, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(245, 197, 24, 0.5), 0 0 4px rgba(245, 197, 24, 0.35);
 }
 
 .gm-digit.gm-rhe {
   margin-left: 5px;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .gm-digit.gm-flip {
@@ -232,88 +256,37 @@
 .gm-ls-item {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 6px;
 }
 
 .gm-ls-text {
-  font-family: "Press Start 2P", monospace;
-  font-size: 7px;
-  color: rgba(244, 239, 225, 0.85);
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: rgba(242, 237, 224, 0.8);
 }
 
 .gm-light {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(244, 239, 225, 0.08);
+  background: rgba(242, 237, 224, 0.08);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 
 .gm-light.on {
   background: var(--gm-teal);
-  box-shadow: 0 0 5px rgba(46, 196, 182, 0.9);
+  box-shadow: 0 0 5px rgba(53, 184, 166, 0.85);
 }
 
 .gm-light.on.strike {
   background: var(--gm-red);
-  box-shadow: 0 0 5px rgba(226, 67, 47, 0.9);
+  box-shadow: 0 0 5px rgba(197, 58, 40, 0.85);
 }
 
 .gm-light.on.flash {
   animation: gm-light-pulse 1.4s ease-out;
-}
-
-/* ---------- American League out-of-town board ---------- */
-
-.gm-al-panel {
-  overflow-x: auto;
-}
-
-.gm-al-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: "VT323", monospace;
-  font-size: 16px;
-  padding: 2px 2px;
-}
-
-.gm-al-row.gm-al-head {
-  border-bottom: 1px solid var(--gm-board-line);
-  padding-bottom: 5px;
-  margin-bottom: 4px;
-}
-
-.gm-al-row.gm-al-head .gm-al-abbr,
-.gm-al-row.gm-al-head .gm-digit {
-  font-family: "Press Start 2P", monospace;
-  font-size: 7px;
-  color: var(--gm-dim);
-}
-
-.gm-al-abbr {
-  font-family: "Press Start 2P", monospace;
-  font-size: 9px;
-  width: 38px;
-  flex: 0 0 38px;
-  color: var(--gm-white);
-}
-
-.gm-inn-cell {
-  width: 34px;
-  flex: 0 0 34px;
-  font-size: 11px;
-  overflow: hidden;
-}
-
-.gm-al-row.is-favorite {
-  color: var(--gm-yellow);
-  background: rgba(255, 212, 0, 0.08);
-  border-radius: 2px;
-}
-
-.gm-al-row.is-favorite .gm-al-abbr {
-  color: var(--gm-yellow);
 }
 
 /* ---------- standings ---------- */
@@ -321,21 +294,23 @@
 .gm-standings-table {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .gm-standings-row {
   display: flex;
   align-items: center;
-  font-family: "VT323", monospace;
-  font-size: 16px;
+  font-family: "Bebas Neue", "Oswald", sans-serif;
+  font-size: 15px;
   color: var(--gm-white);
   padding: 2px 4px;
 }
 
 .gm-standings-row.gm-standings-head {
-  font-family: "Press Start 2P", monospace;
-  font-size: 7px;
+  font-family: "Oswald", sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.5px;
   color: var(--gm-dim);
   padding-bottom: 4px;
   border-bottom: 1px solid var(--gm-board-line);
@@ -365,26 +340,8 @@
 
 .gm-standings-row.is-favorite {
   color: var(--gm-yellow);
-  background: rgba(255, 212, 0, 0.08);
+  background: rgba(245, 197, 24, 0.08);
   border-radius: 2px;
-}
-
-/* ---------- mascot sprite ---------- */
-
-.gm-mascot {
-  position: absolute;
-  bottom: 6px;
-  left: -20px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--gm-white);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.5),
-    -2px -2px 0 -1px var(--gm-red) inset,
-    2px 2px 0 -1px var(--gm-red) inset;
-  animation: gm-mascot-bounce 60s linear infinite;
-  z-index: 6;
 }
 
 /* ---------- keyframes ---------- */
@@ -392,15 +349,12 @@
 @keyframes gm-flip {
   0% {
     transform: rotateX(0deg);
-    filter: brightness(1);
   }
-  40% {
+  50% {
     transform: rotateX(90deg);
-    filter: brightness(2);
   }
   100% {
     transform: rotateX(0deg);
-    filter: brightness(1);
   }
 }
 
@@ -427,51 +381,5 @@
   61%,
   100% {
     opacity: 0.25;
-  }
-}
-
-@keyframes gm-scanline-drift {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 6px;
-  }
-}
-
-@keyframes gm-crt-pulse {
-  0%,
-  100% {
-    filter: brightness(1);
-  }
-  50% {
-    filter: brightness(1.03);
-  }
-}
-
-@keyframes gm-mascot-bounce {
-  0% {
-    left: -20px;
-    bottom: 6px;
-  }
-  5% {
-    bottom: 18px;
-  }
-  10% {
-    bottom: 6px;
-  }
-  15% {
-    bottom: 16px;
-  }
-  20% {
-    bottom: 6px;
-  }
-  45% {
-    left: 100%;
-    bottom: 6px;
-  }
-  100% {
-    left: 100%;
-    bottom: 6px;
   }
 }

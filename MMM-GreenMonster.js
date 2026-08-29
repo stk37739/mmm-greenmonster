@@ -1,12 +1,12 @@
 /* MMM-GreenMonster / MMM-GreenMonster.js
  *
- * A MagicMirror² module styled after Fenway Park's hand-operated Green
- * Monster scoreboard: a "FENWAY PARK" panel with the full inning-by-inning
- * linescore for one featured A.L. game (your favorite team's game if it's
- * on today, otherwise whichever A.L. game is live, otherwise the first
- * game of the day) plus an AT BAT / BALL / STRIKE / OUT / H / E light
- * strip; an "AMERICAN LEAGUE" out-of-town panel listing every other A.L.
- * team's pitcher / inning / runs; and an A.L. East standings board.
+ * A MagicMirror² module modeled on Fenway Park's hand-operated Green
+ * Monster scoreboard: one panel showing the full inning-by-inning
+ * linescore (plus pitcher number and an AT BAT / BALL / STRIKE / OUT /
+ * H / E light strip) for one featured A.L. game — your favorite team's
+ * game if it's on today, otherwise whichever A.L. game is live,
+ * otherwise the first game of the day — with the A.L. East standings
+ * board built into the same panel underneath.
  *
  * The layout is static, the way the real wall is — nothing scrolls.
  * Only the specific digits that actually changed since the last refresh
@@ -21,9 +21,7 @@ Module.register("MMM-GreenMonster", {
   defaults: {
     updateInterval: 30 * 1000, // live linescore refresh
     standingsInterval: 5 * 60 * 1000, // standings refresh (changes slowly)
-    favoriteTeam: null, // 3-letter abbreviation, e.g. "BOS" — featured in the Fenway panel when playing
-    layout: "column", // "column" (stacked, good for portrait) or "row"
-    showMascot: true, // small decorative pixel baseball that occasionally wanders across
+    favoriteTeam: null, // 3-letter abbreviation, e.g. "BOS" — featured in the panel when playing
     fadeSpeed: 500,
     timezone: "America/New_York", // which "today" to fetch — Fenway's, by default
     season: null // override season year if needed (e.g. for testing); defaults to current year
@@ -34,7 +32,6 @@ Module.register("MMM-GreenMonster", {
   start() {
     this.games = [];
     this.featured = null;
-    this.otherRows = [];
     this.standings = [];
     this.loaded = false;
     this._changed = new Set();
@@ -48,14 +45,13 @@ Module.register("MMM-GreenMonster", {
 
   socketNotificationReceived(notification, payload) {
     if (notification === "GM_GAMES") {
-      const derived = this.computeDerived(payload.games);
-      const flat = this.flattenValues(derived);
+      const featured = this.selectFeaturedGame(payload.games);
+      const flat = this.flattenValues(featured);
       this._changed = this.diffValues(this._prevFlat, flat);
       this._prevFlat = flat;
 
       this.games = payload.games;
-      this.featured = derived.featured;
-      this.otherRows = derived.otherRows;
+      this.featured = featured;
       this.loaded = true;
       this.updateDom(this.config.fadeSpeed);
     } else if (notification === "GM_STANDINGS") {
@@ -82,19 +78,6 @@ Module.register("MMM-GreenMonster", {
     return games[0];
   },
 
-  makeTeamRow(game, side) {
-    const isAway = side === "away";
-    return {
-      abbr: isAway ? game.awayAbbr : game.homeAbbr,
-      gamePk: game.gamePk,
-      side,
-      status: game.status,
-      pitcherNumber: isAway ? game.awayPitcherNumber : game.homePitcherNumber,
-      inningDisplay: this.formatInning(game),
-      runs: isAway ? game.awayRuns : game.homeRuns
-    };
-  },
-
   formatInning(game) {
     if (game.status === "Final") return "F";
     if (game.status === "Preview") return game.startTime || "-";
@@ -102,43 +85,22 @@ Module.register("MMM-GreenMonster", {
     return `${half}${game.inning != null ? game.inning : "-"}`;
   },
 
-  computeDerived(games) {
-    const featured = this.selectFeaturedGame(games);
-    const otherRows = [];
-
-    games.forEach((g) => {
-      if (featured && g.gamePk === featured.gamePk) return; // don't repeat the featured game out-of-town
-      if (g.awayIsAL) otherRows.push(this.makeTeamRow(g, "away"));
-      if (g.homeIsAL) otherRows.push(this.makeTeamRow(g, "home"));
-    });
-
-    otherRows.sort((a, b) => a.abbr.localeCompare(b.abbr));
-
-    return { featured, otherRows };
-  },
-
-  flattenValues(derived) {
+  flattenValues(featured) {
     const flat = {};
-    const f = derived.featured;
+    if (!featured) return flat;
 
-    if (f) {
-      const maxInning = Math.max(10, f.innings.length);
-      for (let i = 1; i <= maxInning; i++) {
-        const inn = f.innings.find((x) => x.num === i);
-        flat[`feat-inn-${i}-away`] = inn ? inn.away : null;
-        flat[`feat-inn-${i}-home`] = inn ? inn.home : null;
-      }
-      flat["feat-runs-away"] = f.awayRuns;
-      flat["feat-runs-home"] = f.homeRuns;
-      flat["feat-hits-away"] = f.awayHits;
-      flat["feat-hits-home"] = f.homeHits;
-      flat["feat-errors-away"] = f.awayErrors;
-      flat["feat-errors-home"] = f.homeErrors;
+    const maxInning = Math.max(10, featured.innings.length);
+    for (let i = 1; i <= maxInning; i++) {
+      const inn = featured.innings.find((x) => x.num === i);
+      flat[`feat-inn-${i}-away`] = inn ? inn.away : null;
+      flat[`feat-inn-${i}-home`] = inn ? inn.home : null;
     }
-
-    derived.otherRows.forEach((row) => {
-      flat[`alrow-${row.gamePk}-${row.side}-R`] = row.runs;
-    });
+    flat["feat-runs-away"] = featured.awayRuns;
+    flat["feat-runs-home"] = featured.homeRuns;
+    flat["feat-hits-away"] = featured.awayHits;
+    flat["feat-hits-home"] = featured.homeHits;
+    flat["feat-errors-away"] = featured.awayErrors;
+    flat["feat-errors-home"] = featured.homeErrors;
 
     return flat;
   },
@@ -161,24 +123,12 @@ Module.register("MMM-GreenMonster", {
     const wrapper = document.createElement("div");
     wrapper.className = "gm-wrapper";
 
-    const scanlines = document.createElement("div");
-    scanlines.className = "gm-scanlines";
-    wrapper.appendChild(scanlines);
-
     wrapper.appendChild(this.buildHeader());
 
     const body = document.createElement("div");
-    body.className = `gm-body gm-layout-${this.config.layout === "row" ? "row" : "column"}`;
-    body.appendChild(this.buildFenwayPanel());
-    body.appendChild(this.buildAmericanLeaguePanel());
-    body.appendChild(this.buildStandingsPanel());
+    body.className = "gm-body";
+    body.appendChild(this.buildMergedPanel());
     wrapper.appendChild(body);
-
-    if (this.config.showMascot) {
-      const mascot = document.createElement("div");
-      mascot.className = "gm-mascot";
-      wrapper.appendChild(mascot);
-    }
 
     return wrapper;
   },
@@ -189,7 +139,7 @@ Module.register("MMM-GreenMonster", {
 
     const title = document.createElement("span");
     title.className = "gm-title";
-    title.innerHTML = "FENWAY&nbsp;PARK&nbsp;&middot;&nbsp;<span class='gm-title-sub'>GREEN MONSTER</span>";
+    title.innerHTML = "FENWAY PARK <span class='gm-title-sub'>GREEN MONSTER</span>";
     header.appendChild(title);
 
     const isLive = this.featured && this.featured.status === "Live";
@@ -208,36 +158,50 @@ Module.register("MMM-GreenMonster", {
     return m;
   },
 
-  buildFenwayPanel() {
+  buildMergedPanel() {
     const panel = document.createElement("div");
-    panel.className = "gm-panel gm-fenway-panel";
+    panel.className = "gm-panel";
 
-    const title = document.createElement("div");
-    title.className = "gm-panel-title";
-    title.textContent = "FENWAY PARK";
-    panel.appendChild(title);
+    const row = document.createElement("div");
+    row.className = "gm-panel-row";
+
+    const leftCol = document.createElement("div");
+    leftCol.className = "gm-col-linescore";
 
     if (!this.loaded) {
-      panel.appendChild(this.buildMessage("LOADING\u2026"));
-      return panel;
+      leftCol.appendChild(this.buildMessage("LOADING\u2026"));
+    } else if (!this.featured) {
+      leftCol.appendChild(this.buildMessage("NO A.L. GAME TODAY"));
+    } else {
+      const g = this.featured;
+      const maxInning = Math.max(10, g.innings.length);
+
+      const grid = document.createElement("div");
+      grid.className = "gm-linescore";
+      grid.appendChild(this.buildLinescoreHeaderRow(maxInning));
+      grid.appendChild(this.buildLinescoreTeamRow(g, "away", maxInning));
+      grid.appendChild(this.buildLinescoreTeamRow(g, "home", maxInning));
+      leftCol.appendChild(grid);
+
+      leftCol.appendChild(this.buildLightStrip(g));
     }
 
-    if (!this.featured) {
-      panel.appendChild(this.buildMessage("NO A.L. GAME TODAY"));
-      return panel;
-    }
+    const divider = document.createElement("div");
+    divider.className = "gm-vdivider";
 
-    const g = this.featured;
-    const maxInning = Math.max(10, g.innings.length);
+    const rightCol = document.createElement("div");
+    rightCol.className = "gm-col-standings";
 
-    const grid = document.createElement("div");
-    grid.className = "gm-linescore";
-    grid.appendChild(this.buildLinescoreHeaderRow(maxInning));
-    grid.appendChild(this.buildLinescoreTeamRow(g, "away", maxInning));
-    grid.appendChild(this.buildLinescoreTeamRow(g, "home", maxInning));
-    panel.appendChild(grid);
+    const standingsTitle = document.createElement("div");
+    standingsTitle.className = "gm-section-title";
+    standingsTitle.textContent = "A.L. EAST STANDINGS";
+    rightCol.appendChild(standingsTitle);
+    rightCol.appendChild(this.buildStandingsTable());
 
-    panel.appendChild(this.buildLightStrip(g));
+    row.appendChild(leftCol);
+    row.appendChild(divider);
+    row.appendChild(rightCol);
+    panel.appendChild(row);
 
     return panel;
   },
@@ -380,90 +344,7 @@ Module.register("MMM-GreenMonster", {
     return strip;
   },
 
-  buildAmericanLeaguePanel() {
-    const panel = document.createElement("div");
-    panel.className = "gm-panel gm-al-panel";
-
-    const title = document.createElement("div");
-    title.className = "gm-panel-title";
-    title.textContent = "AMERICAN LEAGUE";
-    panel.appendChild(title);
-
-    if (!this.loaded) {
-      panel.appendChild(this.buildMessage("LOADING\u2026"));
-      return panel;
-    }
-
-    if (!this.otherRows || this.otherRows.length === 0) {
-      panel.appendChild(this.buildMessage("NO OTHER A.L. GAMES"));
-      return panel;
-    }
-
-    const header = document.createElement("div");
-    header.className = "gm-al-row gm-al-head";
-
-    const teamHeader = document.createElement("span");
-    teamHeader.className = "gm-al-abbr";
-    teamHeader.textContent = "TEAM";
-    header.appendChild(teamHeader);
-
-    ["P", "IN", "R"].forEach((h) => {
-      const c = document.createElement("span");
-      c.className = "gm-digit gm-head-cell";
-      c.textContent = h;
-      header.appendChild(c);
-    });
-    panel.appendChild(header);
-
-    this.otherRows.forEach((row) => {
-      const rowEl = document.createElement("div");
-      rowEl.className = "gm-al-row";
-      if (this.config.favoriteTeam && row.abbr === this.config.favoriteTeam) rowEl.classList.add("is-favorite");
-
-      const abbr = document.createElement("span");
-      abbr.className = "gm-al-abbr";
-      abbr.textContent = row.abbr;
-      rowEl.appendChild(abbr);
-
-      const p = document.createElement("span");
-      p.className = "gm-digit";
-      if (row.pitcherNumber) {
-        p.textContent = row.pitcherNumber;
-      } else {
-        p.classList.add("empty");
-      }
-      rowEl.appendChild(p);
-
-      const inn = document.createElement("span");
-      inn.className = "gm-digit gm-inn-cell";
-      inn.textContent = row.inningDisplay || "-";
-      rowEl.appendChild(inn);
-
-      const r = document.createElement("span");
-      r.className = "gm-digit gm-rhe";
-      if (row.runs === null || row.runs === undefined) {
-        r.classList.add("empty");
-      } else {
-        r.textContent = String(row.runs);
-      }
-      if (this._changed.has(`alrow-${row.gamePk}-${row.side}-R`)) r.classList.add("gm-flip");
-      rowEl.appendChild(r);
-
-      panel.appendChild(rowEl);
-    });
-
-    return panel;
-  },
-
-  buildStandingsPanel() {
-    const panel = document.createElement("div");
-    panel.className = "gm-panel gm-standings";
-
-    const title = document.createElement("div");
-    title.className = "gm-panel-title";
-    title.textContent = "A.L. EAST STANDINGS";
-    panel.appendChild(title);
-
+  buildStandingsTable() {
     const table = document.createElement("div");
     table.className = "gm-standings-table";
 
@@ -507,7 +388,6 @@ Module.register("MMM-GreenMonster", {
       });
     }
 
-    panel.appendChild(table);
-    return panel;
+    return table;
   }
 });
